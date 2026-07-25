@@ -59,6 +59,8 @@ MCCD two-tier validation:
 - Corrected the MCCD reconstruction conversion after verifying COLMAP camera
   world-up is source `-Y`: Isaac `(X, Y, Z) = (source X, source Z, -source Y)`.
   The earlier opposite X-axis rotation made the Gaussian scene upside down.
+- Added a persistent partly-cloudy HDR dome sky to the corrected ZED preview
+  and a remote setup tool for applying HDR skies to live stages.
 - All assets warmed successfully in Isaac Sim 6.0.1.
 - Real camera smoke capture: 54 high and 40 low tiles visible.
 - Vectorized selector: approximately 2 ms on 742 tiles.
