@@ -134,11 +134,10 @@
         "update_interval_s": { "type": "number", "exclusiveMinimum": 0 },
         "translation_threshold_m": { "type": "number", "minimum": 0 },
         "rotation_threshold_deg": { "type": "number", "minimum": 0 },
-        "fov_margin_deg": { "type": "number", "minimum": 0 },
+        "fov_margin_deg": { "type": "number", "minimum": -30, "maximum": 30 },
         "multi_camera_mode": { "enum": ["active", "union"] },
         "warmup_batch_size": { "type": "integer", "minimum": 1 }
       }
     }
   }
 }
-

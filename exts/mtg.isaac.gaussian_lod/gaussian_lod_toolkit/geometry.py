@@ -7,7 +7,12 @@ from collections.abc import Iterable
 
 import numpy as np
 
-from .models import Aabb, CameraState
+from .models import (
+    FOV_MARGIN_MAX_DEG,
+    FOV_MARGIN_MIN_DEG,
+    Aabb,
+    CameraState,
+)
 
 
 def _unit(value: Iterable[float], label: str) -> np.ndarray:
@@ -54,15 +59,28 @@ def frustum_planes(camera: CameraState, *, margin_deg: float = 0.0) -> np.ndarra
     """
 
     camera = normalized_camera(camera)
-    if margin_deg < 0.0:
-        raise ValueError("frustum margin must be non-negative")
+    if (
+        not math.isfinite(margin_deg)
+        or not FOV_MARGIN_MIN_DEG <= margin_deg <= FOV_MARGIN_MAX_DEG
+    ):
+        raise ValueError(
+            "frustum margin must be between "
+            f"{FOV_MARGIN_MIN_DEG:g} and {FOV_MARGIN_MAX_DEG:g} degrees"
+        )
     position = np.asarray(camera.position)
     forward = np.asarray(camera.forward)
     right = np.asarray(camera.right)
     up = np.asarray(camera.up)
     margin = math.radians(margin_deg)
-    horizontal = min(camera.horizontal_fov_rad * 0.5 + margin, math.pi * 0.499)
-    vertical = min(camera.vertical_fov_rad * 0.5 + margin, math.pi * 0.499)
+    minimum_half_fov = math.radians(0.5)
+    horizontal = min(
+        max(camera.horizontal_fov_rad * 0.5 + margin, minimum_half_fov),
+        math.pi * 0.499,
+    )
+    vertical = min(
+        max(camera.vertical_fov_rad * 0.5 + margin, minimum_half_fov),
+        math.pi * 0.499,
+    )
 
     normals = [
         forward * math.sin(horizontal) + right * math.cos(horizontal),  # left

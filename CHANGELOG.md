@@ -14,3 +14,5 @@
 - Added root-layer units/up-axis metadata and Isaac Sim lifecycle smoke tests.
 - Vectorized frustum selection and separated conservative culling bounds from
   planar grid-cell LOD distance.
+- Added a live -30 to +30 degree FOV margin slider and tier-colored visible
+  tile outline toggle with a dynamic N-tier legend.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 
+import pytest
 from gaussian_lod_toolkit.geometry import (
     aabb_intersects_frustum,
     camera_changed,
@@ -36,6 +37,20 @@ def test_frustum_margin_keeps_edge_tile() -> None:
     tile = Aabb((10, 11.0, -0.1), (10.5, 11.5, 0.1))
     assert not aabb_intersects_frustum(tile, frustum_planes(camera()))
     assert aabb_intersects_frustum(tile, frustum_planes(camera(), margin_deg=5.0))
+
+
+def test_negative_frustum_margin_shrinks_selection_cone() -> None:
+    tile = Aabb((10, 8.0, -0.1), (10.5, 8.5, 0.1))
+    assert aabb_intersects_frustum(tile, frustum_planes(camera()))
+    assert not aabb_intersects_frustum(
+        tile,
+        frustum_planes(camera(), margin_deg=-10.0),
+    )
+
+
+def test_frustum_margin_rejects_values_outside_ui_range() -> None:
+    with pytest.raises(ValueError, match="between -30 and 30"):
+        frustum_planes(camera(), margin_deg=-30.1)
 
 
 def test_distance_uses_aabb_surface() -> None:

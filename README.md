@@ -34,7 +34,11 @@ in-process to avoid launching one Python process per tile.
 
 Add this repository's `exts` directory to Isaac Sim's extension search paths,
 then enable `mtg.isaac.gaussian_lod` from the Extension Manager. Open
-**Window > Gaussian LOD** to select a package and camera prims.
+**Window > Gaussian LOD** to select a package and camera prims. The FOV margin
+slider ranges from -30 to +30 degrees: negative values tighten the selection
+cone inside the physical camera frustum, while positive values expand it.
+Enable **Color visible tile outlines by tier** to draw a red/amber/blue/violet
+legend and matching bounds around the currently selected tier for each tile.
 
 ## Package contract
 

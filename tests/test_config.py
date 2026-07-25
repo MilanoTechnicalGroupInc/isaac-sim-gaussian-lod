@@ -64,6 +64,40 @@ converter:
         load_build_config(path, require_sources=False)
 
 
+def test_accepts_negative_fov_margin(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        """
+schema: mtg.isaac.gaussian_lod.v1
+name: test_map
+tiers:
+  - {id: high, source: high.ply, near_m: 0, far_m: 10, hysteresis_m: 1}
+runtime:
+  fov_margin_deg: -7.5
+""",
+        encoding="utf-8",
+    )
+    config = load_build_config(path, require_sources=False)
+    assert config.runtime.fov_margin_deg == -7.5
+
+
+def test_rejects_fov_margin_outside_slider_range(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        """
+schema: mtg.isaac.gaussian_lod.v1
+name: test_map
+tiers:
+  - {id: high, source: high.ply, near_m: 0, far_m: 10, hysteresis_m: 1}
+runtime:
+  fov_margin_deg: -31
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(ConfigError, match="between -30 and 30"):
+        load_build_config(path, require_sources=False)
+
+
 def test_rejects_output_directory_containing_build_config(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(

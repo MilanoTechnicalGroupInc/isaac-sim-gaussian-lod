@@ -7,10 +7,22 @@ import omni.ext
 import omni.kit.app
 import omni.ui as ui
 import omni.usd
+from gaussian_lod_toolkit.models import (
+    FOV_MARGIN_MAX_DEG,
+    FOV_MARGIN_MIN_DEG,
+    TIER_DEBUG_PALETTE,
+)
 from omni.kit.menu.utils import MenuItemDescription, add_menu_items, remove_menu_items
 from pxr import UsdGeom
 
 from .runtime import EXTENSION_ID, GaussianLodRuntime
+
+
+def _ui_color(rgb: tuple[float, float, float]) -> int:
+    """Pack RGB floats into OmniUI's ABGR integer color format."""
+
+    red, green, blue = (round(component * 255) for component in rgb)
+    return (255 << 24) | (blue << 16) | (green << 8) | red
 
 
 class GaussianLodExtension(omni.ext.IExt):
@@ -24,7 +36,7 @@ class GaussianLodExtension(omni.ext.IExt):
         )
         camera_union = settings.get(f"/exts/{EXTENSION_ID}/camera_union") or []
         self._runtime.camera_union = [str(path) for path in camera_union]
-        self._window = ui.Window("Gaussian LOD", width=460, height=560, visible=False)
+        self._window = ui.Window("Gaussian LOD", width=520, height=650, visible=False)
         self._window.set_visibility_changed_fn(self._on_window_visibility)
         self._menu_items = [MenuItemDescription(name="Gaussian LOD", onclick_fn=self._show_window)]
         add_menu_items(self._menu_items, "Window")
@@ -106,9 +118,20 @@ class GaussianLodExtension(omni.ext.IExt):
                 self._union_label = ui.Label("Union: none", word_wrap=True, height=36)
                 ui.Separator()
                 with ui.HStack(height=28):
-                    ui.Label("FOV margin (deg)", width=170)
-                    self._margin_model = ui.SimpleFloatModel(2.0)
-                    ui.FloatField(self._margin_model)
+                    ui.Label("FOV margin (deg)", width=135)
+                    margin_field = ui.FloatField(width=64)
+                    self._margin_model = margin_field.model
+                    self._margin_model.set_value(2.0)
+                    ui.FloatSlider(
+                        model=self._margin_model,
+                        min=FOV_MARGIN_MIN_DEG,
+                        max=FOV_MARGIN_MAX_DEG,
+                        step=0.5,
+                    )
+                ui.Label(
+                    "Negative tightens the cone; positive expands it.",
+                    height=18,
+                )
                 with ui.HStack(height=28):
                     ui.Label("Update interval (s)", width=170)
                     self._interval_model = ui.SimpleFloatModel(0.05)
@@ -116,13 +139,19 @@ class GaussianLodExtension(omni.ext.IExt):
                 with ui.HStack(height=28):
                     self._debug_model = ui.SimpleBoolModel(False)
                     ui.CheckBox(self._debug_model, width=20)
-                    ui.Label("Draw visible tile bounds")
+                    ui.Label("Color visible tile outlines by tier")
                 ui.Button("Apply runtime settings", clicked_fn=self._apply_settings, height=28)
                 ui.Separator()
                 ui.Label("Tier distance bands", height=22)
                 self._tier_frame = ui.Frame(height=0)
                 self._tier_models = {}
                 self._build_tier_rows()
+                self._margin_model.add_value_changed_fn(
+                    lambda _model: self._apply_settings()
+                )
+                self._debug_model.add_value_changed_fn(
+                    lambda _model: self._apply_settings()
+                )
 
     def _build_tier_rows(self) -> None:
         self._tier_frame.clear()
@@ -133,6 +162,18 @@ class GaussianLodExtension(omni.ext.IExt):
                 if manifest is None:
                     ui.Label("Load a package to edit tier ranges")
                     return
+                with ui.HStack(height=22, spacing=5):
+                    ui.Label("Outline legend:", width=90)
+                    for index, tier in enumerate(manifest.tiers):
+                        color_name, rgb = TIER_DEBUG_PALETTE[
+                            index % len(TIER_DEBUG_PALETTE)
+                        ]
+                        ui.Rectangle(
+                            width=12,
+                            height=12,
+                            style={"background_color": _ui_color(rgb)},
+                        )
+                        ui.Label(f"{tier.id} ({color_name})", width=105)
                 with ui.HStack(height=20):
                     ui.Label("Tier", width=90)
                     ui.Label("Near", width=90)

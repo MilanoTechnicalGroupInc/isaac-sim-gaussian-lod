@@ -9,6 +9,14 @@ from typing import Any
 import numpy as np
 
 SCHEMA_VERSION = "mtg.isaac.gaussian_lod.v1"
+FOV_MARGIN_MIN_DEG = -30.0
+FOV_MARGIN_MAX_DEG = 30.0
+TIER_DEBUG_PALETTE = (
+    ("red", (1.0, 0.2, 0.1)),
+    ("amber", (1.0, 0.75, 0.1)),
+    ("blue", (0.1, 0.5, 1.0)),
+    ("violet", (0.7, 0.2, 1.0)),
+)
 
 
 @dataclass(frozen=True)

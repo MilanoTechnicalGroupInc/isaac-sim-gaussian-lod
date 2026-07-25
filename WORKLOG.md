@@ -73,3 +73,21 @@ MCCD two-tier validation:
   total reported GPU use from 14,230 MiB to 13,656 MiB.
 - Captured left/right ZED images are non-black, correctly oriented, and show
   the expected stereo baseline. HD1080 LOD versus full-high PSNR is 25.71 dB.
+
+MCCD three-tier 5 m validation:
+
+- 5,941 resident ParticleField assets across 2,725 spatial tiles, totaling
+  0.84 GiB of generated USDC assets; all asset hashes verified.
+- Exclusive tier bands: 2,500,000 ultra Gaussians at 0-5 m, 1,000,000 high
+  Gaussians at 5-15 m, and 100,000 low Gaussians at 15-50 m.
+- Exact ZED X Wide camera frustum with a 0-degree FOV margin and 5 m tiles.
+- All assets warmed successfully in a clean Isaac Sim 6.0.1 process, and ZED
+  5.2.0 stereo SVGA IPC streaming initialized without a GPU device loss.
+- At the courtyard preview pose, the selector chose 225 tiles / 127,212
+  visible splats in 8.64 ms. The interactive GUI snapshot was approximately
+  30.7 FPS while ZED stereo streaming; this is not a controlled median
+  benchmark and should be compared with the benchmark script before tuning
+  release defaults.
+- Large builds must run from the configured converter environment to use the
+  in-process conversion path. Launching from an unrelated interpreter falls
+  back to one converter process per tile and is substantially slower.

@@ -11,6 +11,8 @@ from typing import Any
 import numpy as np
 
 from .models import (
+    FOV_MARGIN_MAX_DEG,
+    FOV_MARGIN_MIN_DEG,
     SCHEMA_VERSION,
     BuildConfig,
     ConverterConfig,
@@ -37,6 +39,15 @@ def _positive(value: Any, label: str, *, allow_zero: bool = False) -> float:
     if not math.isfinite(number) or number < 0.0 or (number == 0.0 and not allow_zero):
         qualifier = "non-negative" if allow_zero else "positive"
         raise ConfigError(f"{label} must be a finite {qualifier} number")
+    return number
+
+
+def _bounded(value: Any, label: str, minimum: float, maximum: float) -> float:
+    number = float(value)
+    if not math.isfinite(number) or not minimum <= number <= maximum:
+        raise ConfigError(
+            f"{label} must be a finite number between {minimum:g} and {maximum:g}"
+        )
     return number
 
 
@@ -137,10 +148,11 @@ def load_build_config(path: str | Path, *, require_sources: bool = True) -> Buil
             "runtime.rotation_threshold_deg",
             allow_zero=True,
         ),
-        fov_margin_deg=_positive(
+        fov_margin_deg=_bounded(
             runtime_raw.get("fov_margin_deg", 2.0),
             "runtime.fov_margin_deg",
-            allow_zero=True,
+            FOV_MARGIN_MIN_DEG,
+            FOV_MARGIN_MAX_DEG,
         ),
         multi_camera_mode=str(runtime_raw.get("multi_camera_mode", "active")),
         warmup_batch_size=int(runtime_raw.get("warmup_batch_size", 8)),
@@ -189,6 +201,16 @@ def validate_manifest(manifest: Manifest) -> None:
         raise ConfigError(f"manifest schema must be {SCHEMA_VERSION!r}")
     if manifest.tile_size_m <= 0.0:
         raise ConfigError("manifest tile_size_m must be positive")
+    if not (
+        math.isfinite(manifest.runtime.fov_margin_deg)
+        and FOV_MARGIN_MIN_DEG
+        <= manifest.runtime.fov_margin_deg
+        <= FOV_MARGIN_MAX_DEG
+    ):
+        raise ConfigError(
+            "manifest runtime.fov_margin_deg must be between "
+            f"{FOV_MARGIN_MIN_DEG:g} and {FOV_MARGIN_MAX_DEG:g}"
+        )
     tier_ids = [tier.id for tier in manifest.tiers]
     if len(tier_ids) != len(set(tier_ids)):
         raise ConfigError("manifest tier ids must be unique")

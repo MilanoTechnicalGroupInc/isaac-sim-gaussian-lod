@@ -12,7 +12,14 @@ import carb
 import omni.usd
 from gaussian_lod_toolkit.config import ConfigError, load_manifest
 from gaussian_lod_toolkit.geometry import camera_changed
-from gaussian_lod_toolkit.models import CameraState, Manifest, ManifestTier
+from gaussian_lod_toolkit.models import (
+    FOV_MARGIN_MAX_DEG,
+    FOV_MARGIN_MIN_DEG,
+    TIER_DEBUG_PALETTE,
+    CameraState,
+    Manifest,
+    ManifestTier,
+)
 from gaussian_lod_toolkit.selector import TileDecision, select_tiles
 from pxr import Sdf, Usd, UsdGeom
 
@@ -177,7 +184,10 @@ class GaussianLodRuntime:
             raise ValueError("multi-camera mode must be 'active' or 'union'")
         self.active_camera = active_camera
         self.camera_union = list(dict.fromkeys(camera_union))
-        self.fov_margin_deg = max(0.0, float(fov_margin_deg))
+        self.fov_margin_deg = min(
+            max(float(fov_margin_deg), FOV_MARGIN_MIN_DEG),
+            FOV_MARGIN_MAX_DEG,
+        )
         self.update_interval_s = max(0.01, float(update_interval_s))
         self.debug_overlay = bool(debug_overlay)
         if self.manifest is not None:
@@ -394,12 +404,7 @@ class GaussianLodRuntime:
             if decision.tier_id is not None
         }
         tier_index = {tier.id: index for index, tier in enumerate(self.manifest.tiers)}
-        palette = (
-            Gf.Vec3f(1.0, 0.2, 0.1),
-            Gf.Vec3f(1.0, 0.75, 0.1),
-            Gf.Vec3f(0.1, 0.5, 1.0),
-            Gf.Vec3f(0.7, 0.2, 1.0),
-        )
+        palette = tuple(Gf.Vec3f(*rgb) for _name, rgb in TIER_DEBUG_PALETTE)
         starts: list[Gf.Vec3f] = []
         ends: list[Gf.Vec3f] = []
         colors: list[Gf.Vec3f] = []
