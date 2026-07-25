@@ -34,7 +34,7 @@ in-process to avoid launching one Python process per tile.
 
 Add this repository's `exts` directory to Isaac Sim's extension search paths,
 then enable `mtg.isaac.gaussian_lod` from the Extension Manager. Open
-**Window → Gaussian LOD** to select a package and camera prims.
+**Window > Gaussian LOD** to select a package and camera prims.
 
 ## Package contract
 
@@ -79,6 +79,26 @@ python scripts/benchmark_isaac_gaussian_lod.py `
 
 gaussian-lod benchmark benchmark-results/full.json benchmark-results/lod.json
 ```
+
+### ZED stereo streaming
+
+Use Stereolabs ZED Isaac Sim 5.2.0 or newer with Isaac Sim 6.0.1. Version 5.2
+adds Windows IPC streaming and camera target-rate rendering; both materially
+reduce the cost of local stereo streaming. The ZED benchmark creates the real
+stereo render products, starts SDK streaming, saves both eye images, and records
+full-high or LOD frame-time statistics:
+
+```powershell
+python scripts/benchmark_zed_gaussian_lod.py `
+  --stage outputs/campus/campus.usda `
+  --zed-asset D:\zed-isaac-sim-5.2.0\exts\sl.sensor.camera\data\usd\ZED_X.usdc `
+  --output-dir benchmark-results/zed-lod `
+  --mode lod --resolution HD1080 --zed-fps 30 --transport IPC
+```
+
+Run the same command with `--mode full-high` and a different output directory
+for a paired baseline. Each output contains `zed_left.png`, `zed_right.png`,
+`zed_stereo_pair.png`, and `report.json`.
 
 ## Target and limitations
 

@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
-"""Enable and disable the Gaussian LOD extension in a live Kit process."""
+"""Enable and disable an extension in a live Kit process."""
 
 from __future__ import annotations
+
+import argparse
 
 from isaacsim import SimulationApp
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--extension-id", default="mtg.isaac.gaussian_lod")
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = parse_args()
     app = SimulationApp(
         {
             "headless": True,
@@ -19,7 +28,7 @@ def main() -> int:
         import omni.kit.app
 
         manager = omni.kit.app.get_app().get_extension_manager()
-        extension_id = "mtg.isaac.gaussian_lod"
+        extension_id = args.extension_id
         if not manager.set_extension_enabled_immediate(extension_id, True):
             raise RuntimeError(f"failed to enable {extension_id}")
         for _ in range(5):
