@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://milanotechnicalgroup.com/schemas/mtg.isaac.gaussian_lod.v1.json",
+  "title": "MTG Isaac Gaussian LOD Manifest V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "name",
+    "tile_size_m",
+    "grid_origin_xy",
+    "source_to_stage",
+    "tiers",
+    "tiles",
+    "runtime"
+  ],
+  "properties": {
+    "schema": { "const": "mtg.isaac.gaussian_lod.v1" },
+    "name": { "type": "string", "minLength": 1 },
+    "tile_size_m": { "type": "number", "exclusiveMinimum": 0 },
+    "grid_origin_xy": {
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }],
+      "items": false
+    },
+    "source_to_stage": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "array",
+        "minItems": 4,
+        "maxItems": 4,
+        "items": { "type": "number" }
+      }
+    },
+    "tiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/tier" }
+    },
+    "tiles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tile" }
+    },
+    "runtime": { "$ref": "#/$defs/runtime" }
+  },
+  "$defs": {
+    "tier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "near_m",
+        "far_m",
+        "hysteresis_m",
+        "source_name",
+        "source_sha256",
+        "source_point_count",
+        "included_point_count"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "near_m": { "type": "number", "minimum": 0 },
+        "far_m": { "type": "number", "exclusiveMinimum": 0 },
+        "hysteresis_m": { "type": "number", "minimum": 0 },
+        "source_name": { "type": "string", "minLength": 1 },
+        "source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "source_point_count": { "type": "integer", "minimum": 1 },
+        "included_point_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier_id", "path", "point_count", "sha256", "bytes"],
+      "properties": {
+        "tier_id": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "point_count": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "tile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "bounds", "assets"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "key": {
+          "type": "array",
+          "prefixItems": [{ "type": "integer" }, { "type": "integer" }],
+          "items": false
+        },
+        "bounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": {
+            "min": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "type": "number" }
+            },
+            "max": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "type": "number" }
+            }
+          }
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/asset" }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "update_interval_s",
+        "translation_threshold_m",
+        "rotation_threshold_deg",
+        "fov_margin_deg",
+        "multi_camera_mode",
+        "warmup_batch_size"
+      ],
+      "properties": {
+        "update_interval_s": { "type": "number", "exclusiveMinimum": 0 },
+        "translation_threshold_m": { "type": "number", "minimum": 0 },
+        "rotation_threshold_deg": { "type": "number", "minimum": 0 },
+        "fov_margin_deg": { "type": "number", "minimum": 0 },
+        "multi_camera_mode": { "enum": ["active", "union"] },
+        "warmup_batch_size": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
+

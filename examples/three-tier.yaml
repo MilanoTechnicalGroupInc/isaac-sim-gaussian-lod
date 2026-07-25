@@ -1,0 +1,45 @@
+schema: mtg.isaac.gaussian_lod.v1
+name: campus
+output_dir: ../outputs/campus
+tile_size_m: 5.0
+min_tile_points: 1
+source_to_stage:
+  - [1.0, 0.0, 0.0, 0.0]
+  - [0.0, 1.0, 0.0, 0.0]
+  - [0.0, 0.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0, 1.0]
+tiers:
+  - id: high
+    source: ../data/campus-high.ply
+    near_m: 0.0
+    far_m: 20.0
+    hysteresis_m: 2.0
+  - id: medium
+    source: ../data/campus-medium.ply
+    near_m: 20.0
+    far_m: 60.0
+    hysteresis_m: 5.0
+  - id: low
+    source: ../data/campus-low.ply
+    near_m: 60.0
+    far_m: 150.0
+    hysteresis_m: 10.0
+runtime:
+  update_interval_s: 0.05
+  translation_threshold_m: 0.05
+  rotation_threshold_deg: 0.25
+  fov_margin_deg: 2.0
+  multi_camera_mode: active
+  warmup_batch_size: 8
+converter:
+  command:
+    - python
+    - -m
+    - omni.kit.converter.gsplat.cli
+    - -i
+    - "{input}"
+    - -o
+    - "{output}"
+    - --up-axis
+    - Z
+

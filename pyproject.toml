@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "isaac-sim-gaussian-lod"
+version = "0.1.0"
+description = "Multi-tier Gaussian splat tiling and camera-frustum LOD for Isaac Sim"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "Milano Technical Group, Inc." }]
+dependencies = [
+  "numpy>=1.24",
+  "Pillow>=10.0",
+  "plyfile>=1.1",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "jsonschema>=4.23",
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+gaussian-lod = "gaussian_lod_toolkit.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "exts/mtg.isaac.gaussian_lod" }
+
+[tool.setuptools.packages.find]
+where = ["exts/mtg.isaac.gaussian_lod"]
+include = ["gaussian_lod_toolkit*", "mtg_isaac_gaussian_lod*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

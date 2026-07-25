@@ -1,0 +1,40 @@
+[package]
+version = "0.1.0"
+category = "Simulation"
+title = "Gaussian LOD"
+description = "Camera-frustum multi-tier Gaussian splat LOD for Isaac Sim 6.0.1"
+authors = ["Milano Technical Group, Inc."]
+readme = "docs/Overview.md"
+keywords = ["isaac", "gaussian", "splat", "lod", "streaming"]
+
+[dependencies]
+"omni.kit.app" = {}
+"omni.kit.menu.utils" = {}
+"omni.timeline" = {}
+"omni.ui" = {}
+"omni.usd" = {}
+
+[[python.module]]
+name = "mtg_isaac_gaussian_lod"
+
+[[python.module]]
+name = "gaussian_lod_toolkit"
+
+[settings]
+exts."mtg.isaac.gaussian_lod".root_prim = "/World/GaussianLOD"
+exts."mtg.isaac.gaussian_lod".enabled = true
+exts."mtg.isaac.gaussian_lod".camera = ""
+exts."mtg.isaac.gaussian_lod".camera_union = []
+
+[[test]]
+dependencies = [
+    "omni.kit.renderer.core",
+    "omni.kit.test",
+    "omni.usd",
+]
+args = [
+    "--/app/renderer/skipWhileMinimized=false",
+    "--/renderer/enabled=rtx",
+    "--/rtx/rendermode=RayTracedLighting",
+]
+
