@@ -20,7 +20,7 @@ from pxr import Usd, UsdGeom  # noqa: E402
 def test_authored_usd_has_resident_invisible_tiers(tmp_path: Path) -> None:
     payload = tmp_path / "high.usda"
     payload.write_text(
-        '#usda 1.0\n\ndef Xform "GaussianSplat" {}\n',
+        '#usda 1.0\n(\n    defaultPrim = "GaussianSplat"\n)\n\ndef Camera "GaussianSplat" {}\n',
         encoding="utf-8",
     )
     manifest_path = tmp_path / "manifest.json"
@@ -60,5 +60,8 @@ def test_authored_usd_has_resident_invisible_tiers(tmp_path: Path) -> None:
     assert root.GetAttribute("mtg:gaussianLod:warmupBatchSize").Get() == 4
     assert UsdGeom.Imageable(tier).ComputeVisibility() == UsdGeom.Tokens.invisible
     assert tier.HasPayload()
+    assert tier.IsA(UsdGeom.Camera)
+    assert UsdGeom.GetStageMetersPerUnit(stage) == 1.0
+    assert UsdGeom.GetStageUpAxis(stage) == UsdGeom.Tokens.z
     transform = UsdGeom.Xformable(content).ComputeLocalToWorldTransform(Usd.TimeCode.Default())
     assert tuple(transform.ExtractTranslation()) == pytest.approx((2.0, 3.0, 4.0))

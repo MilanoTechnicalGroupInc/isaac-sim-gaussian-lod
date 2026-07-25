@@ -59,11 +59,11 @@ def build_package(config_path: str | Path) -> Manifest:
         for tier, tiled in zip(config.tiers, tiled_tiers, strict=True):
             for key, indices in tiled.groups.items():
                 tile_id = _tile_id(key)
-                relative = Path("tiles") / tier.id / f"{tile_id}.usdz"
+                relative = Path("tiles") / tier.id / f"{tile_id}.usdc"
                 temporary_ply = staging / "working" / tier.id / f"{tile_id}.ply"
-                output_usdz = staging / relative
+                output_asset = staging / relative
                 write_group(tiled, indices, temporary_ply)
-                convert_tile(temporary_ply, output_usdz, config.converter)
+                convert_tile(temporary_ply, output_asset, config.converter)
                 temporary_ply.unlink()
                 included_by_tier[tier.id] += len(indices)
                 assets_by_key[key].append(
@@ -71,8 +71,8 @@ def build_package(config_path: str | Path) -> Manifest:
                         tier_id=tier.id,
                         path=relative.as_posix(),
                         point_count=len(indices),
-                        sha256=sha256_file(output_usdz),
-                        bytes=output_usdz.stat().st_size,
+                        sha256=sha256_file(output_asset),
+                        bytes=output_asset.stat().st_size,
                     )
                 )
                 bounds_by_key[key].append(group_bounds(tiled, indices))

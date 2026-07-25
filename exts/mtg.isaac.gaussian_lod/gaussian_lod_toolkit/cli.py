@@ -29,7 +29,7 @@ def _parser() -> argparse.ArgumentParser:
     validate = subparsers.add_parser("validate", help="validate sources and estimate tiles")
     validate.add_argument("config", type=Path)
 
-    build = subparsers.add_parser("build", help="build USDZ tiles and a composed USD scene")
+    build = subparsers.add_parser("build", help="build USDC tiles and a composed USD scene")
     build.add_argument("config", type=Path)
 
     sweep = subparsers.add_parser("sweep", help="compare tile counts for multiple tile sizes")

@@ -83,3 +83,21 @@ def test_missing_desired_asset_falls_back_without_hole() -> None:
 def test_behind_camera_is_hidden() -> None:
     result = select_tiles([tile("behind", -10)], TIERS, [camera("/A")])
     assert result[0].tier_id is None
+
+
+def test_grid_distance_is_not_distorted_by_oversized_gaussian_bounds() -> None:
+    oversized = TileRecord(
+        "oversized",
+        (80, 0),
+        Aabb((-1000, -1000, -1000), (1000, 1000, 1000)),
+        (TileAsset("low", "low.usdc", 10, "d" * 64, 100),),
+    )
+    result = select_tiles(
+        [oversized],
+        TIERS,
+        [camera("/A")],
+        tile_size_m=1.0,
+        grid_origin_xy=(0.0, 0.0),
+    )
+    assert result[0].tier_id == "low"
+    assert result[0].distance_m == 80.0

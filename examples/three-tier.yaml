@@ -35,11 +35,10 @@ converter:
   command:
     - python
     - -m
-    - omni.kit.converter.gsplat.cli
+    - usd_convert_gsplat
     - -i
     - "{input}"
     - -o
     - "{output}"
     - --up-axis
     - Z
-

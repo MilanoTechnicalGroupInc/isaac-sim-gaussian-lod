@@ -56,7 +56,7 @@ class ConverterConfig:
     command: tuple[str, ...] = (
         "python",
         "-m",
-        "omni.kit.converter.gsplat.cli",
+        "usd_convert_gsplat",
         "-i",
         "{input}",
         "-o",

@@ -20,8 +20,8 @@ multi-resolution Gaussian splat tiles with camera-frustum LOD selection.
 
 - GPU: NVIDIA GeForce RTX 5090, 32607 MiB
 - Target: Isaac Sim 6.0.1 / Kit 110
-- `ISAAC_SIM_DIR`: not currently set; Kit-native execution is deferred until
-  the installation is discoverable.
+- Isaac Sim 6.0.1 discovered and validated at
+  `D:\isaac-sim-standalone-6.0.1`.
 - Prototype reference:
   `robotomaton-autonomy:agent/bundle-gather-isaac-usd@aaee5466d8aadd67d2755b257395cf7bb93945d7`
 
@@ -34,7 +34,7 @@ multi-resolution Gaussian splat tiles with camera-frustum LOD selection.
 - [x] Implement Isaac Sim UI/runtime adapter and all-resident warm-up.
 - [x] Implement inspector, parameter sweep, and benchmark tooling.
 - [x] Run pure-Python, OpenUSD, packaging, and static validation.
-- [ ] Run Isaac Sim integration/render/performance tests when available.
+- [x] Run Isaac Sim integration, render, and performance tests.
 - [x] Distill reusable ParticleField warm-up guidance.
 - [x] Publish the private repository:
   `MilanoTechnicalGroupInc/isaac-sim-gaussian-lod`.
@@ -42,10 +42,17 @@ multi-resolution Gaussian splat tiles with camera-frustum LOD selection.
 ## Validation
 
 - `python -m ruff check .`
-- `python -m pytest -q` (26 tests)
+- `python -m pytest -q` (28 tests)
 - `python -m compileall -q exts scripts tests`
 - `python -m build`
 - `git diff --check`
 
-The packaged Kit test and the 600-frame full-high versus LOD benchmark remain
-pending because no Isaac Sim 6.0.1 installation is currently discoverable.
+MCCD two-tier validation:
+
+- 1,173 resident ParticleField assets across 742 spatial tiles.
+- 1,000,000 high plus 100,000 low Gaussians; 10 m tiles.
+- All assets warmed successfully in Isaac Sim 6.0.1.
+- Real camera smoke capture: 54 high and 40 low tiles visible.
+- Vectorized selector: approximately 2 ms on 742 tiles.
+- Smooth 960x960 benchmark: 199.4 median LOD FPS versus 189.5 full-high
+  (1.052x). This dataset/resolution does not meet the 1.25x release gate.

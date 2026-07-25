@@ -7,6 +7,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -29,6 +30,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup-frames", type=int, default=200)
     parser.add_argument("--width", type=int, default=1920)
     parser.add_argument("--height", type=int, default=1080)
+    parser.add_argument("--horizontal-fov-deg", type=float, default=90.0)
+    parser.add_argument(
+        "--trajectory-sampling",
+        choices=("smooth", "keyframes"),
+        default="smooth",
+    )
     parser.add_argument("--gpu-frametime", action="store_true", required=True)
     args = parser.parse_args()
     if args.frames < 100:
@@ -92,7 +99,7 @@ def vram_used_mib() -> float | None:
         result = subprocess.run(
             [
                 "nvidia-smi",
-                "--query-compute-apps=used_memory",
+                "--query-gpu=memory.used",
                 "--format=csv,noheader,nounits",
             ],
             check=True,
@@ -117,6 +124,27 @@ def image_rmse(reference: Path | None, actual: Path) -> float:
     if left.shape != right.shape:
         raise ValueError(f"capture shapes differ: {left.shape} versus {right.shape}")
     return float(np.sqrt(np.mean(np.square(left - right))))
+
+
+def sample_pose(
+    poses: list[dict[str, list[float]]],
+    index: int,
+    frame_count: int,
+    sampling: str,
+) -> dict[str, list[float]]:
+    if sampling == "keyframes" or len(poses) == 1:
+        return poses[index % len(poses)]
+    position = index * (len(poses) - 1) / max(frame_count - 1, 1)
+    lower = min(int(position), len(poses) - 1)
+    upper = min(lower + 1, len(poses) - 1)
+    alpha = position - lower
+    return {
+        key: [
+            float(left + (right - left) * alpha)
+            for left, right in zip(poses[lower][key], poses[upper][key], strict=True)
+        ]
+        for key in ("eye", "target")
+    }
 
 
 async def wait_for_capture(helper) -> None:
@@ -175,8 +203,18 @@ def main() -> int:
     stage.SetEditTarget(stage.GetSessionLayer())
     ensure_lights(stage)
     camera_prim = stage.GetPrimAtPath(args.camera)
-    if not camera_prim or not camera_prim.IsA(UsdGeom.Camera):
-        raise ValueError(f"camera prim not found: {args.camera}")
+    if not camera_prim:
+        camera_prim = UsdGeom.Camera.Define(stage, args.camera).GetPrim()
+    if not camera_prim.IsA(UsdGeom.Camera):
+        raise ValueError(f"camera path is not a UsdGeomCamera: {args.camera}")
+    camera = UsdGeom.Camera(camera_prim)
+    horizontal_aperture = 20.0
+    camera.GetHorizontalApertureAttr().Set(horizontal_aperture)
+    camera.GetVerticalApertureAttr().Set(horizontal_aperture * args.height / args.width)
+    camera.GetFocalLengthAttr().Set(
+        horizontal_aperture / (2.0 * math.tan(math.radians(args.horizontal_fov_deg) * 0.5))
+    )
+    camera.GetClippingRangeAttr().Set((0.05, 150.0))
     camera_xform = UsdGeom.Xformable(camera_prim)
     camera_xform.ClearXformOpOrder()
     camera_op = camera_xform.AddTransformOp()
@@ -192,6 +230,7 @@ def main() -> int:
     while runtime.stats.state == "warmup":
         runtime.update()
         app.update()
+    runtime.update_interval_s = runtime.manifest.runtime.update_interval_s
 
     if args.mode == "full-high":
         first_tier = runtime.manifest.tiers[0].id
@@ -217,8 +256,8 @@ def main() -> int:
         raise ValueError("trajectory JSON must contain a non-empty poses list")
     timeline = omni.timeline.get_timeline_interface()
     timeline.play()
-    for index in range(args.warmup_frames):
-        pose = poses[index % len(poses)]
+    for _ in range(args.warmup_frames):
+        pose = poses[0]
         camera_op.Set(look_at(pose["eye"], pose["target"]))
         runtime.update()
         app.update()
@@ -226,7 +265,7 @@ def main() -> int:
     frame_times_ms: list[float] = []
     selector_times_ms: list[float] = []
     for index in range(args.frames):
-        pose = poses[index % len(poses)]
+        pose = sample_pose(poses, index, args.frames, args.trajectory_sampling)
         camera_op.Set(look_at(pose["eye"], pose["target"]))
         started = time.perf_counter()
         runtime.update()
@@ -255,6 +294,7 @@ def main() -> int:
         "height": args.height,
         "scene_sha256": sha256(stage_path),
         "trajectory_sha256": sha256(trajectory_path),
+        "trajectory_sampling": args.trajectory_sampling,
         "median_fps": float(np.median(fps)),
         "p95_frame_ms": float(np.percentile(values, 95)),
         "selector_p95_ms": float(np.percentile(selector_times_ms, 95)),

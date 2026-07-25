@@ -8,7 +8,6 @@ readme = "docs/Overview.md"
 keywords = ["isaac", "gaussian", "splat", "lod", "streaming"]
 
 [dependencies]
-"omni.kit.app" = {}
 "omni.kit.menu.utils" = {}
 "omni.timeline" = {}
 "omni.ui" = {}
@@ -37,4 +36,3 @@ args = [
     "--/renderer/enabled=rtx",
     "--/rtx/rendermode=RayTracedLighting",
 ]
-

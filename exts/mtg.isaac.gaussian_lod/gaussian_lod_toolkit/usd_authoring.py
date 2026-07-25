@@ -63,24 +63,26 @@ def author_tiles_layer(path: Path, manifest: Manifest, manifest_path: Path) -> N
         ).Set(Gf.Vec3d(*tile.bounds.maximum))
         for asset in tile.assets:
             tier_path = f"{tile_path}/Tier_{asset.tier_id}"
-            tier = UsdGeom.Xform.Define(stage, tier_path)
-            tier.GetPrim().CreateAttribute(
+            tier_prim = stage.DefinePrim(tier_path)
+            tier_prim.CreateAttribute(
                 "mtg:gaussianLod:tier", Sdf.ValueTypeNames.Token, custom=True
             ).Set(asset.tier_id)
-            tier.GetPrim().GetPayloads().AddPayload(_asset_path(path, path.parent / asset.path))
-            UsdGeom.Imageable(tier.GetPrim()).MakeInvisible()
+            tier_prim.GetPayloads().AddPayload(_asset_path(path, path.parent / asset.path))
+            UsdGeom.Imageable(tier_prim).MakeInvisible()
     stage.GetRootLayer().Save()
 
 
 def author_scene_layer(path: Path, tiles_layer: Path) -> None:
     try:
-        from pxr import Sdf
+        from pxr import Usd, UsdGeom
     except ImportError as exc:
         raise RuntimeError(
             "USD authoring requires an Isaac Sim/OpenUSD Python environment"
         ) from exc
-    layer = Sdf.Layer.CreateNew(str(path))
-    layer.subLayerPaths = [_asset_path(path, tiles_layer)]
-    layer.defaultPrim = "World"
-    layer.documentation = "Camera-frustum multi-tier Gaussian LOD composition"
-    layer.Save()
+    stage = Usd.Stage.CreateNew(str(path))
+    stage.GetRootLayer().subLayerPaths = [_asset_path(path, tiles_layer)]
+    UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+    UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+    stage.SetDefaultPrim(stage.GetPrimAtPath("/World"))
+    stage.GetRootLayer().documentation = "Camera-frustum multi-tier Gaussian LOD composition"
+    stage.GetRootLayer().Save()

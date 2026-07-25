@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
-from .geometry import aabb_intersects_frustum, distance_to_aabb, frustum_planes
+import numpy as np
+
+from .geometry import frustum_planes
 from .models import CameraState, ManifestTier, TileRecord
 
 
@@ -63,6 +65,8 @@ def select_tiles(
     *,
     current: Mapping[str, str | None] | None = None,
     fov_margin_deg: float = 0.0,
+    tile_size_m: float | None = None,
+    grid_origin_xy: tuple[float, float] | None = None,
 ) -> list[TileDecision]:
     """Select at most one resident tier per tile.
 
@@ -70,37 +74,81 @@ def select_tiles(
     any camera wins.
     """
 
+    tile_list = list(tiles)
     camera_list = list(cameras)
     current = current or {}
     prepared = [
         (camera, frustum_planes(camera, margin_deg=fov_margin_deg)) for camera in camera_list
     ]
-    decisions: list[TileDecision] = []
-    for tile in tiles:
-        best_index: int | None = None
-        best_distance: float | None = None
-        best_camera: str | None = None
-        for camera, planes in prepared:
-            if not aabb_intersects_frustum(tile.bounds, planes):
-                continue
-            distance = distance_to_aabb(camera.position, tile.bounds)
+    if not tile_list:
+        return []
+    minimums = np.asarray([tile.bounds.minimum for tile in tile_list], dtype=np.float64)
+    maximums = np.asarray([tile.bounds.maximum for tile in tile_list], dtype=np.float64)
+    if tile_size_m is not None and grid_origin_xy is not None:
+        grid_minimums = np.asarray(
+            [
+                (
+                    grid_origin_xy[0] + tile.key[0] * tile_size_m,
+                    grid_origin_xy[1] + tile.key[1] * tile_size_m,
+                )
+                for tile in tile_list
+            ],
+            dtype=np.float64,
+        )
+        grid_maximums = grid_minimums + tile_size_m
+    else:
+        grid_minimums = minimums[:, :2]
+        grid_maximums = maximums[:, :2]
+    centers = (minimums + maximums) * 0.5
+    extents = (maximums - minimums) * 0.5
+    best_indices: list[int | None] = [None] * len(tile_list)
+    best_distances: list[float | None] = [None] * len(tile_list)
+    best_cameras: list[str | None] = [None] * len(tile_list)
+
+    for camera, planes in prepared:
+        normals = planes[:, :3]
+        signed_centers = centers @ normals.T + planes[:, 3]
+        radii = extents @ np.abs(normals).T
+        visible_indices = np.flatnonzero(np.all(signed_centers + radii >= 0.0, axis=1))
+        position = np.asarray(camera.position[:2], dtype=np.float64)
+        delta = np.maximum(
+            np.maximum(
+                grid_minimums[visible_indices] - position,
+                position - grid_maximums[visible_indices],
+            ),
+            0.0,
+        )
+        distances = np.linalg.norm(delta, axis=1)
+        for tile_index, distance_value in zip(visible_indices, distances, strict=True):
+            index = int(tile_index)
+            tile = tile_list[index]
+            distance = float(distance_value)
             desired = _tier_with_hysteresis(distance, tiers, current.get(tile.id))
             desired = _available_tier(desired, tiers, tile)
             if desired is None:
                 continue
+            best_index = best_indices[index]
+            best_distance = best_distances[index]
             if best_index is None or desired < best_index:
-                best_index = desired
-                best_distance = distance
-                best_camera = camera.path
+                best_indices[index] = desired
+                best_distances[index] = distance
+                best_cameras[index] = camera.path
             elif desired == best_index and (best_distance is None or distance < best_distance):
-                best_distance = distance
-                best_camera = camera.path
-        decisions.append(
-            TileDecision(
-                tile_id=tile.id,
-                tier_id=None if best_index is None else tiers[best_index].id,
-                distance_m=best_distance,
-                camera_path=best_camera,
-            )
+                best_distances[index] = distance
+                best_cameras[index] = camera.path
+
+    return [
+        TileDecision(
+            tile_id=tile.id,
+            tier_id=None if best_index is None else tiers[best_index].id,
+            distance_m=best_distance,
+            camera_path=best_camera,
         )
-    return decisions
+        for tile, best_index, best_distance, best_camera in zip(
+            tile_list,
+            best_indices,
+            best_distances,
+            best_cameras,
+            strict=True,
+        )
+    ]

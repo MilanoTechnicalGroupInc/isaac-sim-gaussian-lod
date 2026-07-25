@@ -329,6 +329,8 @@ class GaussianLodRuntime:
                     if self.fov_margin_deg is not None
                     else self.manifest.runtime.fov_margin_deg
                 ),
+                tile_size_m=self.manifest.tile_size_m,
+                grid_origin_xy=self.manifest.grid_origin_xy,
             )
             selector_ms = (time.perf_counter() - started) * 1000.0
             changed = self._apply_decisions(stage, decisions)

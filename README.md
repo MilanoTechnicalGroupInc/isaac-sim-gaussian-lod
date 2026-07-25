@@ -22,11 +22,13 @@ gaussian-lod inspect outputs/campus/manifest.json
 The builder calls NVIDIA's official converter through:
 
 ```text
-python -m omni.kit.converter.gsplat.cli -i INPUT.ply -o OUTPUT.usdz --up-axis Z
+python -m usd_convert_gsplat -i INPUT.ply -o OUTPUT.usdc --up-axis Z
 ```
 
-Run the builder from an Isaac Sim Python environment, or set
-`converter.command` in the YAML to an equivalent `usd-convert-gsplat` command.
+Install NVIDIA's `usd-convert-gsplat[usd]` package in a Python 3.11/3.12
+environment, or set `converter.command` in the YAML to an equivalent command.
+When the configured interpreter is the builder's interpreter, tiles convert
+in-process to avoid launching one Python process per tile.
 
 ## Install the extension
 
@@ -45,8 +47,13 @@ The source YAML and generated manifest use
 - are split on the same XY grid;
 - retain their original spherical-harmonic and opacity data.
 
-The composed scene is a `.usda` root referencing per-tile `.usdz` assets.
-Do not use a `.usdz` as the composition root.
+Frustum culling uses conservative 3D Gaussian bounds. Tier distance uses the
+planar tile footprint so unusually large Gaussian scales cannot incorrectly
+pull a distant tile into the high-resolution band.
+
+The composed scene is a `.usda` root referencing per-tile `.usdc` assets.
+USDC avoids the archive-handle pressure caused by opening hundreds of
+independent USDZ payloads. Do not use a `.usdz` as the composition root.
 
 ## Benchmark
 
