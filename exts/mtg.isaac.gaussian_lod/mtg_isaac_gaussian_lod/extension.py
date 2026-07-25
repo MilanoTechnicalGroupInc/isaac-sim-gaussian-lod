@@ -19,11 +19,25 @@ class GaussianLodExtension(omni.ext.IExt):
         root_prim = settings.get(f"/exts/{EXTENSION_ID}/root_prim") or "/World/GaussianLOD"
         self._runtime = GaussianLodRuntime(str(root_prim))
         self._runtime.enabled = bool(settings.get(f"/exts/{EXTENSION_ID}/enabled"))
+        self._runtime.active_camera = str(
+            settings.get(f"/exts/{EXTENSION_ID}/camera") or ""
+        )
+        camera_union = settings.get(f"/exts/{EXTENSION_ID}/camera_union") or []
+        self._runtime.camera_union = [str(path) for path in camera_union]
         self._window = ui.Window("Gaussian LOD", width=460, height=560, visible=False)
         self._window.set_visibility_changed_fn(self._on_window_visibility)
         self._menu_items = [MenuItemDescription(name="Gaussian LOD", onclick_fn=self._show_window)]
         add_menu_items(self._menu_items, "Window")
         self._build_ui()
+        self._camera_model.set_value(self._runtime.active_camera)
+        self._union_label.text = (
+            "Union: " + ", ".join(self._runtime.camera_union)
+            if self._runtime.camera_union
+            else "Union: none"
+        )
+        self._window.visible = bool(
+            settings.get(f"/exts/{EXTENSION_ID}/show_window")
+        )
         self._runtime.subscribe(self._on_stats)
         app = omni.kit.app.get_app()
         self._update_subscription = app.get_update_event_stream().create_subscription_to_pop(
@@ -39,6 +53,7 @@ class GaussianLodExtension(omni.ext.IExt):
             )
         )
         self._runtime.load_from_stage()
+        self._refresh_manifest_ui()
 
     def on_shutdown(self) -> None:
         remove_menu_items(self._menu_items, "Window")
@@ -163,6 +178,10 @@ class GaussianLodExtension(omni.ext.IExt):
         if path:
             self._runtime.active_camera = path
             self._camera_model.set_value(path)
+            carb.settings.get_settings().set(
+                f"/exts/{EXTENSION_ID}/camera",
+                path,
+            )
 
     def _add_selected_camera(self) -> None:
         path = self._selected_camera()
@@ -182,6 +201,12 @@ class GaussianLodExtension(omni.ext.IExt):
             fov_margin_deg=self._margin_model.as_float,
             update_interval_s=self._interval_model.as_float,
             debug_overlay=self._debug_model.as_bool,
+        )
+        settings = carb.settings.get_settings()
+        settings.set(f"/exts/{EXTENSION_ID}/camera", self._camera_model.as_string)
+        settings.set(
+            f"/exts/{EXTENSION_ID}/camera_union",
+            list(self._runtime.camera_union),
         )
 
     def _apply_tiers(self) -> None:

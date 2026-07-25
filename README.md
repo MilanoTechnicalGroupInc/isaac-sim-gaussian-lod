@@ -47,6 +47,12 @@ The source YAML and generated manifest use
 - are split on the same XY grid;
 - retain their original spherical-harmonic and opacity data.
 
+Do not assume the COLMAP reconstruction's world-up axis from COLMAP's camera
+convention. Derive it from representative camera poses or known gravity, then
+transform a known camera center and up vector before building. For a
+reconstruction whose world-up is source `-Y`, the Z-up mapping is
+`Isaac (X, Y, Z) = source (X, Z, -Y)`.
+
 Frustum culling uses conservative 3D Gaussian bounds. Tier distance uses the
 planar tile footprint so unusually large Gaussian scales cannot incorrectly
 pull a distant tile into the high-resolution band.

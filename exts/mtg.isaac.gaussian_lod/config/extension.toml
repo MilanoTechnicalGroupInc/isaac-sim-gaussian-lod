@@ -24,6 +24,7 @@ exts."mtg.isaac.gaussian_lod".root_prim = "/World/GaussianLOD"
 exts."mtg.isaac.gaussian_lod".enabled = true
 exts."mtg.isaac.gaussian_lod".camera = ""
 exts."mtg.isaac.gaussian_lod".camera_union = []
+exts."mtg.isaac.gaussian_lod".show_window = false
 
 [[test]]
 dependencies = [

@@ -15,6 +15,7 @@ multi-resolution Gaussian splat tiles with camera-frustum LOD selection.
 | USD composition and relative asset references | `usd-pipeline` | Reopen generated package and inspect references |
 | Performance comparison | `profile-isaac-sim` | Deterministic baseline/LOD benchmark report |
 | ZED stereo camera rendering and SDK streaming | `isaac-camera`, `profile-isaac-sim` | Paired stereo captures and full-high/LOD frame-time benchmark |
+| Interactive GUI preview and live stage setup | `isaac-sim-orchestrator`, `isaac-sim-remote` | Visible Isaac Sim window, open stage, active LOD camera, and viewport validation |
 | Delivery validation | `isaac-sim-validator` | Namespace, paths, render mode, and artifact checks |
 
 ## Environment
@@ -45,8 +46,9 @@ multi-resolution Gaussian splat tiles with camera-frustum LOD selection.
 ## Validation
 
 - `python -m ruff check .`
-- `python -m pytest -q` (28 tests)
-- `python -m compileall -q exts scripts tests`
+- `python -m pytest -q` (30 tests)
+- `python -m compileall -q exts tests` (remote setup scripts intentionally use
+  Kit's top-level-await executor)
 - `python -m build`
 - `git diff --check`
 
@@ -54,6 +56,9 @@ MCCD two-tier validation:
 
 - 1,173 resident ParticleField assets across 742 spatial tiles.
 - 1,000,000 high plus 100,000 low Gaussians; 10 m tiles.
+- Corrected the MCCD reconstruction conversion after verifying COLMAP camera
+  world-up is source `-Y`: Isaac `(X, Y, Z) = (source X, source Z, -source Y)`.
+  The earlier opposite X-axis rotation made the Gaussian scene upside down.
 - All assets warmed successfully in Isaac Sim 6.0.1.
 - Real camera smoke capture: 54 high and 40 low tiles visible.
 - Vectorized selector: approximately 2 ms on 742 tiles.
