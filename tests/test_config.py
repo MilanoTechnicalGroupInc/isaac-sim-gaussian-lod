@@ -64,6 +64,23 @@ converter:
         load_build_config(path, require_sources=False)
 
 
+def test_rejects_empty_converter_command(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        """
+schema: mtg.isaac.gaussian_lod.v1
+name: test_map
+tiers:
+  - {id: high, source: high.ply, near_m: 0, far_m: 10, hysteresis_m: 1}
+converter:
+  command: []
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(ConfigError, match="executable"):
+        load_build_config(path, require_sources=False)
+
+
 def test_accepts_negative_fov_margin(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=70", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,7 +9,21 @@ description = "Multi-tier Gaussian splat tiling and camera-frustum LOD for Isaac
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
 authors = [{ name = "Milano Technical Group, Inc." }]
+maintainers = [{ name = "eaturkgeldi-mtg" }]
+keywords = ["isaac-sim", "gaussian-splatting", "lod", "omniverse", "usd"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
   "numpy>=1.24",
   "Pillow>=10.0",
@@ -19,21 +33,31 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "build>=1.2",
   "jsonschema>=4.23",
   "pytest>=8.0",
   "pytest-cov>=5.0",
   "ruff>=0.6",
 ]
 
+[project.urls]
+Homepage = "https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod"
+Repository = "https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod.git"
+Issues = "https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod/issues"
+Changelog = "https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod/blob/main/CHANGELOG.md"
+Security = "https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod/security/policy"
+
 [project.scripts]
 gaussian-lod = "gaussian_lod_toolkit.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "exts/mtg.isaac.gaussian_lod" }
+include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["exts/mtg.isaac.gaussian_lod"]
 include = ["gaussian_lod_toolkit*", "mtg_isaac_gaussian_lod*"]
+exclude = ["mtg_isaac_gaussian_lod.tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

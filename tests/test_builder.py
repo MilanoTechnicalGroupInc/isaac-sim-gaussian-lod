@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from gaussian_lod_toolkit import builder
 
 from tests.helpers import write_splat
@@ -74,3 +75,36 @@ tiers:
     assert experimental["tile_size_m"] == 10.0
     assert default["tiers"][0]["tile_count"] == 2
     assert experimental["tiers"][0]["tile_count"] == 1
+
+
+def test_replace_output_directory_refuses_unrecognized_directory(tmp_path: Path) -> None:
+    output = tmp_path / "package"
+    output.mkdir()
+    marker = output / "keep.txt"
+    marker.write_text("user data\n", encoding="utf-8")
+    staging = tmp_path / "staging"
+    staging.mkdir()
+
+    with pytest.raises(RuntimeError, match="does not contain a valid manifest"):
+        builder._replace_output_directory(staging, output, "fixture")
+
+    assert marker.read_text(encoding="utf-8") == "user data\n"
+    assert staging.is_dir()
+
+
+def test_replace_output_directory_replaces_matching_package(tmp_path: Path) -> None:
+    output = tmp_path / "package"
+    output.mkdir()
+    (output / "manifest.json").write_text(
+        json.dumps({"schema": "mtg.isaac.gaussian_lod.v1", "name": "fixture"}),
+        encoding="utf-8",
+    )
+    (output / "old.txt").write_text("old\n", encoding="utf-8")
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    (staging / "new.txt").write_text("new\n", encoding="utf-8")
+
+    builder._replace_output_directory(staging, output, "fixture")
+
+    assert not (output / "old.txt").exists()
+    assert (output / "new.txt").read_text(encoding="utf-8") == "new\n"

@@ -166,6 +166,8 @@ def load_build_config(path: str | Path, *, require_sources: bool = True) -> Buil
     command = converter_raw.get("command", list(ConverterConfig().command))
     if not isinstance(command, list) or not all(isinstance(item, str) for item in command):
         raise ConfigError("converter.command must be a list of strings")
+    if not command or not command[0].strip():
+        raise ConfigError("converter.command must name an executable")
     joined = "\0".join(command)
     if "{input}" not in joined or "{output}" not in joined:
         raise ConfigError("converter.command must include {input} and {output} placeholders")

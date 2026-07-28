@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .config import load_build_config
 from .converter import convert_tile
-from .models import Aabb, Manifest, ManifestTier, TileAsset, TileRecord
+from .models import SCHEMA_VERSION, Aabb, Manifest, ManifestTier, TileAsset, TileRecord
 from .ply_tiles import (
     group_bounds,
     inspect_ply,
@@ -29,6 +29,47 @@ def _tile_id(key: tuple[int, int]) -> str:
         return f"p{value:05d}" if value >= 0 else f"n{abs(value):05d}"
 
     return f"Tile_{component(key[0])}_{component(key[1])}"
+
+
+def _replace_output_directory(staging: Path, output_dir: Path, expected_name: str) -> None:
+    """Install staging without replacing a directory that is not one of our packages."""
+    if not output_dir.exists():
+        staging.rename(output_dir)
+        return
+    if output_dir.is_symlink() or not output_dir.is_dir():
+        raise RuntimeError(f"refusing to replace non-package output path: {output_dir}")
+
+    manifest_path = output_dir / "manifest.json"
+    try:
+        existing = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
+        raise RuntimeError(
+            f"refusing to replace {output_dir}: it does not contain a valid manifest.json"
+        ) from exc
+    if not isinstance(existing, dict):
+        raise RuntimeError(
+            f"refusing to replace {output_dir}: its manifest root is not an object"
+        )
+    if existing.get("schema") != SCHEMA_VERSION or existing.get("name") != expected_name:
+        raise RuntimeError(
+            f"refusing to replace {output_dir}: its manifest does not identify "
+            f"the {expected_name!r} {SCHEMA_VERSION!r} package"
+        )
+
+    backup = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}.previous-", dir=output_dir.parent))
+    backup.rmdir()
+    output_dir.rename(backup)
+    try:
+        staging.rename(output_dir)
+    except Exception:
+        backup.rename(output_dir)
+        raise
+    try:
+        shutil.rmtree(backup)
+    except OSError as exc:
+        raise RuntimeError(
+            f"installed {output_dir}, but could not remove the previous package at {backup}"
+        ) from exc
 
 
 def build_package(config_path: str | Path) -> Manifest:
@@ -127,15 +168,7 @@ def build_package(config_path: str | Path) -> Manifest:
         working = staging / "working"
         if working.exists():
             shutil.rmtree(working)
-        if config.output_dir.exists():
-            backup = config.output_dir.with_name(config.output_dir.name + ".previous")
-            if backup.exists():
-                shutil.rmtree(backup)
-            config.output_dir.rename(backup)
-            staging.rename(config.output_dir)
-            shutil.rmtree(backup)
-        else:
-            staging.rename(config.output_dir)
+        _replace_output_directory(staging, config.output_dir, config.name)
         return manifest
     except Exception:
         shutil.rmtree(staging, ignore_errors=True)

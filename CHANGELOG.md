@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Added public contribution, conduct, security, ownership, and issue-reporting
+  policies.
+- Hardened GitHub Actions with read-only permissions, immutable action pins,
+  dependency updates, package builds, and Python 3.10-3.12 validation.
+- Refused to replace output directories that are not recognized Gaussian LOD
+  packages.
+- Added maintainer, project URL, platform, license-file, and source-distribution
+  metadata.
+- Documented configuration trust boundaries and third-party licenses.
+- Removed internal worklog details from the public tree.
+
 ## 0.1.0
 
 - Added standard 3DGS PLY validation and deterministic aligned XY tiling.
