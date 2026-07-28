@@ -1,5 +1,8 @@
 # Isaac Sim Gaussian LOD
 
+[![CI](https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod/actions/workflows/validate.yml/badge.svg)](https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod/actions/workflows/validate.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod/blob/main/LICENSE)
+
 `isaac-sim-gaussian-lod` turns aligned high-, medium-, and low-resolution
 Gaussian splat PLYs into a shared tile package and renders exactly one quality
 tier per visible tile in Isaac Sim 6.0.1.
@@ -9,9 +12,29 @@ prims. Nearby tiles use the highest tier, farther tiles use progressively lower
 tiers, and tiles outside every selected frustum are hidden. All tile payloads
 are registered once and retained in memory to avoid camera-motion stalls.
 
-## Install for tools
+> **Project status:** `0.1.x` is an alpha release. The manifest schema is
+> versioned, but APIs and installation details may still change before `1.0`.
+
+## Compatibility
+
+| Component | Supported versions |
+|---|---|
+| Python toolkit | Python 3.10, 3.11, and 3.12 |
+| Isaac Sim extension | Isaac Sim 6.0.1 / Kit 110 |
+| Renderer | RayTracedLighting |
+| Camera model | Perspective pinhole cameras |
+
+The Python wheel contains the offline toolkit and Python modules. A repository
+checkout is required for the complete Isaac extension layout, examples,
+schemas, and validation scripts.
+
+## Install the toolkit
+
+Clone the repository and install an editable development environment:
 
 ```powershell
+git clone https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod.git
+cd isaac-sim-gaussian-lod
 python -m pip install -e ".[dev]"
 gaussian-lod validate examples/three-tier.yaml
 gaussian-lod sweep examples/three-tier.yaml --tile-sizes 2.5 5 10
@@ -29,6 +52,10 @@ Install NVIDIA's `usd-convert-gsplat[usd]` package in a Python 3.11/3.12
 environment, or set `converter.command` in the YAML to an equivalent command.
 When the configured interpreter is the builder's interpreter, tiles convert
 in-process to avoid launching one Python process per tile.
+
+Configuration files are trusted input: `converter.command` executes the named
+program without a shell. Review configuration from third parties before
+running `gaussian-lod build`.
 
 ## Install the extension
 
@@ -64,6 +91,14 @@ pull a distant tile into the high-resolution band.
 The composed scene is a `.usda` root referencing per-tile `.usdc` assets.
 USDC avoids the archive-handle pressure caused by opening hundreds of
 independent USDZ payloads. Do not use a `.usdz` as the composition root.
+
+### Output-directory safety
+
+The builder stages a complete package before replacing an existing output.
+It will replace a directory only when that directory contains a matching
+`mtg.isaac.gaussian_lod.v1` manifest. This prevents a mistaken or untrusted
+`output_dir` from deleting an unrelated directory. Keep independent backups
+for production datasets and generated assets.
 
 ## Benchmark
 
@@ -117,3 +152,24 @@ for a paired baseline. Each output contains `zed_left.png`, `zed_right.png`,
 - XY tile columns with conservative 3D bounds.
 - Frustum and distance culling; geometry occlusion culling is not included.
 - Supplied LOD PLYs are tiled but not generated or downsampled.
+
+## Contributing and security
+
+The project maintainer and code owner is
+[@eaturkgeldi-mtg](https://github.com/eaturkgeldi-mtg). See
+[CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change. Report security
+issues privately as described in [SECURITY.md](SECURITY.md), not in a public
+issue.
+
+## License and third-party software
+
+Original project code is licensed under the
+[Apache License 2.0](https://github.com/MilanoTechnicalGroupInc/isaac-sim-gaussian-lod/blob/main/LICENSE).
+Copyright 2026 Milano Technical Group Inc. Runtime dependencies retain their
+own licenses; notably, `plyfile` is GPL-3.0-or-later. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before redistributing a
+combined environment.
+
+Isaac Sim and NVIDIA are trademarks or registered trademarks of NVIDIA
+Corporation. ZED is a trademark of Stereolabs. This project is not affiliated
+with or endorsed by NVIDIA or Stereolabs.
